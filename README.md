@@ -11,9 +11,7 @@ A full-stack web application designed to help users declutter their minds by org
 - **😊 Mood Tracking**: Daily mood tracking with emoji interface
 - **📊 History**: View and manage your thought, suggestion, and mood history
 - **🔐 Authentication**: Google and email/password authentication via Firebase
-- **🌙 Dark Mode**: Beautiful dark/light theme toggle
-- **📱 Responsive Design**: Works seamlessly on desktop and mobile
-- **🎨 Modern UI**: Clean, modern interface with glassmorphism effects
+
 
 ## 🚀 Tech Stack
 
@@ -53,7 +51,7 @@ A full-stack web application designed to help users declutter their minds by org
 1. **Clone the repository**
 
    ```bash
-   git clone <your-repo-url>
+   git clone [<your-repo-url>](https://github.com/arushree16/Decluttr)
    cd Decluttr
    ```
 
