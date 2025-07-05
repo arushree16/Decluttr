@@ -124,41 +124,6 @@ A full-stack web application designed to help users declutter their minds by org
    npm run build
    ```
 
-2. **Deploy to your preferred hosting service**
-
-## 🌐 Deployment
-
-### Frontend Deployment Options
-
-- **Vercel**: Connect your GitHub repo and deploy automatically
-- **Netlify**: Drag and drop the `build` folder or connect to GitHub
-- **Firebase Hosting**: Use Firebase CLI to deploy
-
-### Backend Deployment Options
-
-- **Heroku**: Connect your GitHub repo
-- **Railway**: Simple deployment with automatic scaling
-- **Render**: Free tier available with automatic deployments
-
-### Environment Variables for Production
-
-Make sure to set these environment variables in your hosting platform:
-
-**Backend:**
-
-- `MONGO_URI`
-- `PORT` (if required by your hosting service)
-
-**Frontend:**
-
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-- `OPENAI_API_KEY`
-- `COHERE_API_KEY`
 
 ## 📁 Project Structure
 
