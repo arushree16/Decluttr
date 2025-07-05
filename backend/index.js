@@ -23,6 +23,11 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'Decluttr backend is running!' });
+});
+
 // Get user data
 app.get('/api/user/:userId', async (req, res) => {
   const user = await User.findOne({ userId: req.params.userId });
