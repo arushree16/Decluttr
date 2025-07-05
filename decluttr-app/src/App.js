@@ -12,8 +12,6 @@ import {
 } from 'firebase/auth';
 import { FaMicrophone } from 'react-icons/fa';
 import axios from 'axios'; // Add this import at the top
-import { db } from './firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { CloseIcon } from '@chakra-ui/icons'; // Add this import at the top
 import { motion, AnimatePresence } from 'framer-motion';
 import Confetti from 'react-confetti';
@@ -77,93 +75,53 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-      // Load tasks when user changes
-      const loadedTasks = await loadTasks();
-      setTasks(loadedTasks.length ? loadedTasks : [
-        { text: 'Prepare presentation', done: false },
-        { text: 'Wish mom a happy birthday', done: false },
-        { text: 'Study for DSA exam', done: false },
-        { text: 'Call the dentist', done: false },
-        { text: 'Take a break and relax', done: false },
-      ]);
+      // Load data from backend when user changes
+      await loadDataFromBackend();
     });
-    // eslint-disable-next-line
-    // (if you use ESLint, you may need to disable exhaustive-deps for this effect)
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    saveTasks(tasks);
-    // eslint-disable-next-line
-  }, [tasks, user]);
+  // Remove the conflicting useEffect that saves tasks
+  // useEffect(() => {
+  //   saveTasks(tasks);
+  // }, [tasks, user]);
 
-  useEffect(() => {
-    if (user !== undefined) {
-      loadAllHistories().then(({ thoughts, suggestions, moods }) => {
-        setThoughtHistory(thoughts);
-        setSuggestionHistory(suggestions);
-        setMoodHistory(moods);
-      });
-    }
-    // eslint-disable-next-line
-  }, [user]);
+  // Remove the conflicting useEffect that saves histories
+  // useEffect(() => {
+  //   saveAllHistories(thoughtHistory, suggestionHistory, moodHistory);
+  // }, [thoughtHistory, suggestionHistory, moodHistory, user]);
 
-  useEffect(() => {
-    saveAllHistories(thoughtHistory, suggestionHistory, moodHistory);
-    // eslint-disable-next-line
-  }, [thoughtHistory, suggestionHistory, moodHistory, user]);
-
+  // Single useEffect to save data to backend
   useEffect(() => {
     if (tasks === null) return; // Don't save until loaded
-    fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/user/${userId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        thoughtHistory,
-        suggestionHistory,
-        moodHistory,
-        tasks,
-      }),
-    })
-    .then(res => res.json())
-    .then(data => console.log('Saved:', data))
-    .catch(err => console.error('Save error:', err));
-    // eslint-disable-next-line
+    saveDataToBackend();
   }, [thoughtHistory, suggestionHistory, moodHistory, tasks, userId]);
 
-  useEffect(() => {
+  // Load data from backend
+  const loadDataFromBackend = async () => {
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
     console.log('Loading data from:', backendUrl);
     console.log('User ID:', userId);
     
-    fetch(`${backendUrl}/api/user/${userId}`)
-      .then(res => {
-        console.log('Response status:', res.status);
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        console.log('Loaded data:', data);
-        setThoughtHistory(data.thoughtHistory || []);
-        setSuggestionHistory(data.suggestionHistory || []);
-        setMoodHistory(data.moodHistory || []);
-        if (data.tasks && data.tasks.length > 0) {
-          setTasks(data.tasks);
-        } else {
-          setTasks([
-            { text: 'Prepare presentation', done: false },
-            { text: 'Wish mom a happy birthday', done: false },
-            { text: 'Study for DSA exam', done: false },
-            { text: 'Call the dentist', done: false },
-            { text: 'Take a break and relax', done: false },
-          ]);
-        }
-      })
-      .catch(err => {
-        console.error('Load error:', err);
-        // Set default tasks even on error to prevent infinite loading
+    try {
+      const response = await fetch(`${backendUrl}/api/user/${userId}`);
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Loaded data:', data);
+      
+      setThoughtHistory(data.thoughtHistory || []);
+      setSuggestionHistory(data.suggestionHistory || []);
+      setMoodHistory(data.moodHistory || []);
+      
+      if (data.tasks && data.tasks.length > 0) {
+        setTasks(data.tasks);
+      } else {
+        // Only set default tasks if no tasks exist in database
         setTasks([
           { text: 'Prepare presentation', done: false },
           { text: 'Wish mom a happy birthday', done: false },
@@ -171,9 +129,93 @@ function App() {
           { text: 'Call the dentist', done: false },
           { text: 'Take a break and relax', done: false },
         ]);
+      }
+    } catch (err) {
+      console.error('Load error:', err);
+      // Set default tasks only on error
+      setTasks([
+        { text: 'Prepare presentation', done: false },
+        { text: 'Wish mom a happy birthday', done: false },
+        { text: 'Study for DSA exam', done: false },
+        { text: 'Call the dentist', done: false },
+        { text: 'Take a break and relax', done: false },
+      ]);
+    }
+  };
+
+  // Save data to backend
+  const saveDataToBackend = async () => {
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+    console.log('Saving data to:', backendUrl);
+    console.log('User ID:', userId);
+    console.log('Tasks to save:', tasks);
+    
+    try {
+      const response = await fetch(`${backendUrl}/api/user/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          thoughtHistory,
+          suggestionHistory,
+          moodHistory,
+          tasks,
+        }),
       });
-    // eslint-disable-next-line
-}, [userId]);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Saved successfully:', data);
+    } catch (err) {
+      console.error('Save error:', err);
+    }
+  };
+
+  // Remove the old useEffect that was loading data
+  // useEffect(() => {
+  //   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+  //   console.log('Loading data from:', backendUrl);
+  //   console.log('User ID:', userId);
+  //   
+  //   fetch(`${backendUrl}/api/user/${userId}`)
+  //     .then(res => {
+  //       console.log('Response status:', res.status);
+  //       if (!res.ok) {
+  //         throw new Error(`HTTP error! status: ${res.status}`);
+  //       }
+  //       return res.json();
+  //     })
+  //     .then(data => {
+  //       console.log('Loaded data:', data);
+  //       setThoughtHistory(data.thoughtHistory || []);
+  //       setSuggestionHistory(data.suggestionHistory || []);
+  //       setMoodHistory(data.moodHistory || []);
+  //       if (data.tasks && data.tasks.length > 0) {
+  //         setTasks(data.tasks);
+  //       } else {
+  //         setTasks([
+  //           { text: 'Prepare presentation', done: false },
+  //           { text: 'Wish mom a happy birthday', done: false },
+  //           { text: 'Study for DSA exam', done: false },
+  //           { text: 'Call the dentist', done: false },
+  //           { text: 'Take a break and relax', done: false },
+  //         ]);
+  //       }
+  //     })
+  //     .catch(err => {
+  //       console.error('Load error:', err);
+  //       // Set default tasks even on error to prevent infinite loading
+  //       setTasks([
+  //         { text: 'Prepare presentation', done: false },
+  //         { text: 'Wish mom a happy birthday', done: false },
+  //         { text: 'Study for DSA exam', done: false },
+  //         { text: 'Call the dentist', done: false },
+  //         { text: 'Take a break and relax', done: false },
+  //       ]);
+  //     });
+  // }, [userId]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -422,90 +464,8 @@ function App() {
     recognition.start();
   };
 
-  // Save tasks to Firestore or localStorage
-  const saveTasks = async (tasksToSave) => {
-    if (!user) {
-      localStorage.setItem('tasks', JSON.stringify(tasksToSave));
-      return;
-    }
-    try {
-      await setDoc(doc(db, 'users', user.uid), { tasks: tasksToSave });
-    } catch (e) {
-      localStorage.setItem('tasks', JSON.stringify(tasksToSave));
-    }
-  };
-
-  // Load tasks from Firestore or localStorage
-  const loadTasks = async () => {
-    if (!user) {
-      const local = localStorage.getItem('tasks');
-      return local ? JSON.parse(local) : [];
-    }
-    try {
-      const docSnap = await getDoc(doc(db, 'users', user.uid));
-      if (docSnap.exists() && docSnap.data().tasks) {
-        return docSnap.data().tasks;
-      }
-      // fallback to local
-      const local = localStorage.getItem('tasks');
-      return local ? JSON.parse(local) : [];
-    } catch (e) {
-      const local = localStorage.getItem('tasks');
-      return local ? JSON.parse(local) : [];
-    }
-  };
-
-  // Save all histories to Firestore or localStorage
-  const saveAllHistories = async (thoughts, suggestions, moods) => {
-    if (!user) {
-      localStorage.setItem('thoughtHistory', JSON.stringify(thoughts));
-      localStorage.setItem('suggestionHistory', JSON.stringify(suggestions));
-      localStorage.setItem('moodHistory', JSON.stringify(moods));
-      return;
-    }
-    try {
-      await setDoc(doc(db, 'users', user.uid), {
-        thoughtHistory: thoughts,
-        suggestionHistory: suggestions,
-        moodHistory: moods,
-      }, { merge: true });
-    } catch (e) {
-      localStorage.setItem('thoughtHistory', JSON.stringify(thoughts));
-      localStorage.setItem('suggestionHistory', JSON.stringify(suggestions));
-      localStorage.setItem('moodHistory', JSON.stringify(moods));
-    }
-  };
-
-  // Load all histories from Firestore or localStorage
-  const loadAllHistories = async () => {
-    if (!user) {
-      const localThoughts = localStorage.getItem('thoughtHistory');
-      const localSuggestions = localStorage.getItem('suggestionHistory');
-      const localMoods = localStorage.getItem('moodHistory');
-      return {
-        thoughts: localThoughts ? JSON.parse(localThoughts) : [],
-        suggestions: localSuggestions ? JSON.parse(localSuggestions) : [],
-        moods: localMoods ? JSON.parse(localMoods) : [],
-      };
-    }
-    try {
-      const docSnap = await getDoc(doc(db, 'users', user.uid));
-      return {
-        thoughts: docSnap.exists() && docSnap.data().thoughtHistory ? docSnap.data().thoughtHistory : [],
-        suggestions: docSnap.exists() && docSnap.data().suggestionHistory ? docSnap.data().suggestionHistory : [],
-        moods: docSnap.exists() && docSnap.data().moodHistory ? docSnap.data().moodHistory : [],
-      };
-    } catch (e) {
-      const localThoughts = localStorage.getItem('thoughtHistory');
-      const localSuggestions = localStorage.getItem('suggestionHistory');
-      const localMoods = localStorage.getItem('moodHistory');
-      return {
-        thoughts: localThoughts ? JSON.parse(localThoughts) : [],
-        suggestions: localSuggestions ? JSON.parse(localSuggestions) : [],
-        moods: localMoods ? JSON.parse(localMoods) : [],
-      };
-    }
-  };
+  // Data persistence is now handled by MongoDB backend only
+  // Removed Firebase/localStorage functions to prevent conflicts
 
   const handleMoodSelect = (idx) => {
     setMood(idx);
