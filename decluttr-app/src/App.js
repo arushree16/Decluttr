@@ -132,9 +132,20 @@ function App() {
   }, [thoughtHistory, suggestionHistory, moodHistory, tasks, userId]);
 
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/user/${userId}`)
-      .then(res => res.json())
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+    console.log('Loading data from:', backendUrl);
+    console.log('User ID:', userId);
+    
+    fetch(`${backendUrl}/api/user/${userId}`)
+      .then(res => {
+        console.log('Response status:', res.status);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
+        console.log('Loaded data:', data);
         setThoughtHistory(data.thoughtHistory || []);
         setSuggestionHistory(data.suggestionHistory || []);
         setMoodHistory(data.moodHistory || []);
@@ -151,6 +162,8 @@ function App() {
         }
       })
       .catch(err => {
+        console.error('Load error:', err);
+        // Set default tasks even on error to prevent infinite loading
         setTasks([
           { text: 'Prepare presentation', done: false },
           { text: 'Wish mom a happy birthday', done: false },
@@ -158,7 +171,6 @@ function App() {
           { text: 'Call the dentist', done: false },
           { text: 'Take a break and relax', done: false },
         ]);
-        console.error('Load error:', err);
       });
     // eslint-disable-next-line
 }, [userId]);
@@ -552,7 +564,24 @@ function App() {
   }
 
   if (tasks === null) {
-    return <div>Loading...</div>;
+    return (
+      <Box 
+        minH="100vh" 
+        display="flex" 
+        alignItems="center" 
+        justifyContent="center"
+        bgGradient="linear(to-br, green.50, blue.50, teal.100)"
+      >
+        <VStack spacing={4}>
+          <Text fontSize="2xl" fontWeight="bold" color="gray.600">
+            🌱 Loading Decluttr...
+          </Text>
+          <Text fontSize="sm" color="gray.500">
+            Connecting to your mind decluttering space
+          </Text>
+        </VStack>
+      </Box>
+    );
   }
 
   // Dashboard layout
