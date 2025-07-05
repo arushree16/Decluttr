@@ -224,25 +224,6 @@ Decluttr/
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Chakra UI** for the beautiful component library
-- **Framer Motion** for smooth animations
-- **Firebase** for authentication services
-- **OpenAI** and **Cohere** for AI capabilities
-
-## 📞 Support
-
-If you encounter any issues or have questions:
-
-1. Check the [Issues](https://github.com/your-username/Decluttr/issues) page
-2. Create a new issue with detailed information
-3. Contact the maintainers
-
 ---
 
 Made with ❤️ for better mental health and productivity
