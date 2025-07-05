@@ -115,7 +115,7 @@ function App() {
 
   useEffect(() => {
     if (tasks === null) return; // Don't save until loaded
-    fetch(`http://localhost:5000/api/user/${userId}`, {
+    fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/user/${userId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -132,7 +132,7 @@ function App() {
   }, [thoughtHistory, suggestionHistory, moodHistory, tasks, userId]);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/user/${userId}`)
+    fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/user/${userId}`)
       .then(res => res.json())
       .then(data => {
         setThoughtHistory(data.thoughtHistory || []);
