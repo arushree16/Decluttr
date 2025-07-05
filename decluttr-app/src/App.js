@@ -61,13 +61,7 @@ function App() {
   const textColor = useColorModeValue("gray.700", "gray.200");
   const boxShadow = useColorModeValue("2xl", "0 8px 32px 0 rgba(44, 62, 80, 0.37)");
 
-  const [userId, setUserId] = useState(() => {
-    const localId = localStorage.getItem('decluttr_user_id');
-    if (localId) return localId;
-    const newId = 'guest_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('decluttr_user_id', newId);
-    return newId;
-  });
+  const [userId, setUserId] = useState(null);
 
   const [categories, setCategories] = useState({});
   const [categorySuggestions, setCategorySuggestions] = useState({});
@@ -75,11 +69,28 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-      // Load data from backend when user changes
-      await loadDataFromBackend();
+      
+      // Set userId based on authentication status
+      if (user) {
+        // Use Firebase UID for authenticated users
+        setUserId(user.uid);
+        console.log('Authenticated user ID:', user.uid);
+      } else {
+        // Use guest ID for anonymous users
+        const guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
+        setUserId(guestId);
+        console.log('Guest user ID:', guestId);
+      }
     });
     return () => unsubscribe();
   }, []);
+
+  // Load data when userId changes
+  useEffect(() => {
+    if (userId) {
+      loadDataFromBackend();
+    }
+  }, [userId]);
 
   // Remove the conflicting useEffect that saves tasks
   // useEffect(() => {
@@ -99,6 +110,11 @@ function App() {
 
   // Load data from backend
   const loadDataFromBackend = async () => {
+    if (!userId) {
+      console.log('No userId available, skipping data load');
+      return;
+    }
+    
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
     console.log('Loading data from:', backendUrl);
     console.log('User ID:', userId);
@@ -145,6 +161,11 @@ function App() {
 
   // Save data to backend
   const saveDataToBackend = async () => {
+    if (!userId) {
+      console.log('No userId available, skipping data save');
+      return;
+    }
+    
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
     console.log('Saving data to:', backendUrl);
     console.log('User ID:', userId);
@@ -239,6 +260,21 @@ function App() {
 
   const handleSignOut = async () => {
     await signOut(auth);
+    // Clear any stored user data when signing out
+    localStorage.removeItem('decluttr_user_id');
+    // Reset state to defaults
+    setTasks([
+      { text: 'Prepare presentation', done: false },
+      { text: 'Wish mom a happy birthday', done: false },
+      { text: 'Study for DSA exam', done: false },
+      { text: 'Call the dentist', done: false },
+      { text: 'Take a break and relax', done: false },
+    ]);
+    setThoughtHistory([]);
+    setSuggestionHistory([]);
+    setMoodHistory([]);
+    setCategories({});
+    setCategorySuggestions({});
   };
 
   const handleAddTask = () => {
